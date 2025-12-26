@@ -280,6 +280,13 @@ exports.api = functions.https.onRequest(async (req, res) => {
     return;
   }
 
+  if (pathname === '/cw1/sqlite') {
+    // SQLite doesn't work in serverless environment, return JSON data instead
+    const results = filterRates(cw1Rates, parsedUrl.query);
+    res.json({ rates: results, source: 'sqlite-fallback' });
+    return;
+  }
+
   if (pathname === '/spot') {
     const results = filterRates(spotRates, parsedUrl.query);
     res.json({ rates: results, source: 'spot' });
