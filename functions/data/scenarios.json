@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "name": "CW1 Success",
+      "requestId": "REQ-CW1-001",
+      "origin": "LAX",
+      "destination": "SHA",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "STANDARD",
+      "currency": "USD",
+      "weightKg": 12000,
+      "maxTotalRate": 4500,
+      "markupPercent": 12,
+      "tatHours": 4,
+      "requestedAt": "2025-01-10T10:00:00",
+      "expectedPath": "CW1 Path"
+    },
+    {
+      "name": "Spot Success",
+      "requestId": "REQ-SPOT-001",
+      "origin": "DFW",
+      "destination": "BOM",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "SPOT",
+      "currency": "USD",
+      "weightKg": 15000,
+      "maxTotalRate": 6000,
+      "markupPercent": 10,
+      "tatHours": 4,
+      "requestedAt": "2025-01-10T10:00:00",
+      "expectedPath": "Spot Path"
+    },
+    {
+      "name": "Team TAT Success",
+      "requestId": "REQ-TEAM-001",
+      "origin": "ORD",
+      "destination": "SGN",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "STANDARD",
+      "currency": "USD",
+      "weightKg": 13000,
+      "maxTotalRate": 6500,
+      "markupPercent": 12,
+      "tatHours": 4,
+      "requestedAt": "2025-01-10T10:00:00",
+      "expectedPath": "Comparison Path"
+    },
+    {
+      "name": "Escalation",
+      "requestId": "REQ-ESC-001",
+      "origin": "MIA",
+      "destination": "DXB",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "STANDARD",
+      "currency": "USD",
+      "weightKg": 14000,
+      "maxTotalRate": 8000,
+      "markupPercent": 15,
+      "tatHours": 4,
+      "requestedAt": "2025-01-10T01:00:00",
+      "expectedPath": "Escalation Path"
+    }
+  ]
+}

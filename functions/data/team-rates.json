@@ -1,0 +1,26 @@
+{
+  "requests": [
+    {
+      "requestId": "REQ-TEAM-001",
+      "origin": "ORD",
+      "destination": "SGN",
+      "currency": "USD",
+      "options": [
+        {
+          "provider": "OriginTeam",
+          "baseRate": 5200,
+          "fuelSurcharge": 500,
+          "totalRate": 5700,
+          "transitDays": 26
+        },
+        {
+          "provider": "DestinationTeam",
+          "baseRate": 5100,
+          "fuelSurcharge": 550,
+          "totalRate": 5650,
+          "transitDays": 25
+        }
+      ]
+    }
+  ]
+}
