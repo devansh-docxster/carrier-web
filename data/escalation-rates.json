@@ -1,0 +1,19 @@
+{
+  "requests": [
+    {
+      "requestId": "REQ-ESC-001",
+      "origin": "MIA",
+      "destination": "DXB",
+      "currency": "USD",
+      "options": [
+        {
+          "provider": "EscalationTeam",
+          "baseRate": 6800,
+          "fuelSurcharge": 650,
+          "totalRate": 7450,
+          "transitDays": 18
+        }
+      ]
+    }
+  ]
+}

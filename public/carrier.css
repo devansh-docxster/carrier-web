@@ -1,0 +1,124 @@
+:root {
+  color-scheme: light;
+  font-family: "Georgia", "Times New Roman", serif;
+  background: #f4f1ea;
+  color: #222;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #fefcf7, #efe7da);
+}
+
+main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  background: #fffaf2;
+  border: 1px solid #ded2c0;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(58, 38, 10, 0.12);
+  padding: 28px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  letter-spacing: 0.4px;
+}
+
+p {
+  margin: 0 0 16px;
+  color: #5d4c38;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #4a3b2b;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid #cdbda7;
+  background: #fff;
+  font-size: 15px;
+}
+
+button {
+  background: #855f3a;
+  border: none;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #6f4e2f;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+table th, table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #e0d4c2;
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #efe2d1;
+  color: #61462c;
+  font-size: 12px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #7c6650;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.actions a {
+  color: #6f4e2f;
+  font-size: 13px;
+}
+
+#error {
+  color: #9c2f2f;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+#no-rates {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fbefe6;
+  color: #7b4b2b;
+}

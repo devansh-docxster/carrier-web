@@ -1,0 +1,1002 @@
+{
+  "name": "CW1 Rates Demo Flow",
+  "description": "Demo flow for CW1 rate request routing using local mock services.",
+  "tags": [
+    "demo",
+    "cw1",
+    "rates"
+  ],
+  "template": {
+    "displayName": "CW1 Rates Demo Flow",
+    "trigger": {
+      "name": "trigger",
+      "displayName": "Rate Request Form",
+      "type": "PIECE_TRIGGER",
+      "valid": true,
+      "settings": {
+        "pieceName": "@docxster/piece-forms",
+        "pieceVersion": "0.4.8",
+        "pieceType": "OFFICIAL",
+        "packageType": "REGISTRY",
+        "triggerName": "form_submission",
+        "input": {
+          "formTitle": "Rate Request Demo",
+          "requireProjectAuth": false,
+          "waitForResponse": false,
+          "inputs": [
+            {
+              "displayName": "Request ID",
+              "type": "text",
+              "description": "Example: REQ-CW1-001",
+              "required": true
+            },
+            {
+              "displayName": "Origin",
+              "type": "text",
+              "description": "Example: LAX",
+              "required": true
+            },
+            {
+              "displayName": "Destination",
+              "type": "text",
+              "description": "Example: SHA",
+              "required": true
+            },
+            {
+              "displayName": "Mode",
+              "type": "dropdown",
+              "description": "OCEAN or AIR",
+              "required": true,
+              "options": [
+                {
+                  "option": "OCEAN"
+                },
+                {
+                  "option": "AIR"
+                }
+              ]
+            },
+            {
+              "displayName": "Equipment Type",
+              "type": "text",
+              "description": "Example: 40HC",
+              "required": true
+            },
+            {
+              "displayName": "Service Level",
+              "type": "dropdown",
+              "description": "STANDARD / EXPRESS / SPOT",
+              "required": true,
+              "options": [
+                {
+                  "option": "STANDARD"
+                },
+                {
+                  "option": "EXPRESS"
+                },
+                {
+                  "option": "SPOT"
+                }
+              ]
+            },
+            {
+              "displayName": "Currency",
+              "type": "text",
+              "description": "Default: USD",
+              "required": true
+            },
+            {
+              "displayName": "Max Total Rate",
+              "type": "text",
+              "description": "Optional ceiling for sales review",
+              "required": false
+            },
+            {
+              "displayName": "Markup Percent",
+              "type": "text",
+              "description": "Example: 12",
+              "required": true
+            },
+            {
+              "displayName": "TAT Hours",
+              "type": "text",
+              "description": "Example: 4",
+              "required": true
+            },
+            {
+              "displayName": "Requested At",
+              "type": "text",
+              "description": "Use YYYY-MM-DDTHH:mm:ss format",
+              "required": true
+            },
+            {
+              "displayName": "CW1 Source",
+              "type": "dropdown",
+              "description": "tables / json / sqlite",
+              "required": true,
+              "options": [
+                {
+                  "option": "tables"
+                },
+                {
+                  "option": "json"
+                },
+                {
+                  "option": "sqlite"
+                }
+              ]
+            },
+            {
+              "displayName": "Spot Source",
+              "type": "dropdown",
+              "description": "browser / http",
+              "required": true,
+              "options": [
+                {
+                  "option": "browser"
+                },
+                {
+                  "option": "http"
+                }
+              ]
+            },
+            {
+              "displayName": "Review Decision",
+              "type": "dropdown",
+              "description": "approve or reject",
+              "required": false,
+              "options": [
+                {
+                  "option": "approve"
+                },
+                {
+                  "option": "reject"
+                }
+              ]
+            }
+          ]
+        },
+        "inputUiInfo": {}
+      },
+      "nextAction": {
+        "name": "cw1_source_router",
+        "displayName": "CW1 Source",
+        "type": "ROUTER",
+        "valid": true,
+        "settings": {
+          "branches": [
+            {
+              "branchType": "CONDITION",
+              "branchName": "Tables",
+              "conditions": [
+                [
+                  {
+                    "firstValue": "{{trigger.cw1Source}}",
+                    "secondValue": "tables",
+                    "operator": "TEXT_EXACTLY_MATCHES",
+                    "caseSensitive": false
+                  }
+                ]
+              ]
+            },
+            {
+              "branchType": "CONDITION",
+              "branchName": "JSON",
+              "conditions": [
+                [
+                  {
+                    "firstValue": "{{trigger.cw1Source}}",
+                    "secondValue": "json",
+                    "operator": "TEXT_EXACTLY_MATCHES",
+                    "caseSensitive": false
+                  }
+                ]
+              ]
+            },
+            {
+              "branchType": "CONDITION",
+              "branchName": "SQLite",
+              "conditions": [
+                [
+                  {
+                    "firstValue": "{{trigger.cw1Source}}",
+                    "secondValue": "sqlite",
+                    "operator": "TEXT_EXACTLY_MATCHES",
+                    "caseSensitive": false
+                  }
+                ]
+              ]
+            },
+            {
+              "branchType": "FALLBACK",
+              "branchName": "CW1 Default"
+            }
+          ],
+          "executionType": "EXECUTE_FIRST_MATCH",
+          "inputUiInfo": {}
+        },
+        "children": [
+          {
+            "name": "cw1_tables_find",
+            "displayName": "Fetch CW1 Rates (Tables)",
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "pieceName": "@docxster/piece-tables",
+              "pieceVersion": "0.2.3",
+              "pieceType": "OFFICIAL",
+              "packageType": "REGISTRY",
+              "actionName": "tables-find-records",
+              "input": {
+                "table_id": "cw1_rates",
+                "limit": 50
+              },
+              "inputUiInfo": {}
+            },
+            "nextAction": {
+              "name": "cw1_tables_filter",
+              "displayName": "Normalize CW1 Table Rates",
+              "type": "CODE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "records": "{{steps.cw1_tables_find}}",
+                  "origin": "{{trigger.origin}}",
+                  "destination": "{{trigger.destination}}",
+                  "mode": "{{trigger.mode}}",
+                  "equipmentType": "{{trigger.equipmentType}}",
+                  "serviceLevel": "{{trigger.serviceLevel}}"
+                },
+                "sourceCode": {
+                  "packageJson": "{\"name\":\"code-cw1_tables_filter\",\"version\":\"1.0.0\",\"dependencies\":{}}",
+                  "code": "export const code = async (inputs) => {\n  const records = Array.isArray(inputs.records) ? inputs.records : [];\n  const normalize = (value) => value === undefined || value === null ? '' : String(value).trim().toUpperCase();\n  const origin = normalize(inputs.origin);\n  const destination = normalize(inputs.destination);\n  const mode = normalize(inputs.mode);\n  const equipmentType = normalize(inputs.equipmentType);\n  const serviceLevel = normalize(inputs.serviceLevel);\n\n  const rates = records.map((record) => {\n    const cells = record && record.cells ? record.cells : {};\n    const values = Object.values(cells);\n    const getValue = (fieldName) => {\n      const match = values.find((cell) => cell && String(cell.fieldName).toLowerCase() === fieldName.toLowerCase());\n      return match ? match.value : undefined;\n    };\n\n    const totalRateRaw = getValue('totalRate');\n    const totalRate = Number(totalRateRaw);\n\n    return {\n      origin: normalize(getValue('origin')),\n      destination: normalize(getValue('destination')),\n      mode: normalize(getValue('mode')),\n      equipmentType: normalize(getValue('equipmentType')),\n      serviceLevel: normalize(getValue('serviceLevel')),\n      totalRate: Number.isFinite(totalRate) ? totalRate : null,\n      raw: record,\n    };\n  });\n\n  const filtered = rates.filter((rate) => {\n    if (origin && rate.origin !== origin) return false;\n    if (destination && rate.destination !== destination) return false;\n    if (mode && rate.mode !== mode) return false;\n    if (equipmentType && rate.equipmentType !== equipmentType) return false;\n    if (serviceLevel && rate.serviceLevel !== serviceLevel) return false;\n    return rate.totalRate !== null;\n  });\n\n  return { rates: filtered };\n};"
+                }
+              }
+            }
+          },
+          {
+            "name": "cw1_json_fetch",
+            "displayName": "Fetch CW1 Rates (JSON)",
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "pieceName": "@docxster/piece-http",
+              "pieceVersion": "0.8.5",
+              "pieceType": "OFFICIAL",
+              "packageType": "REGISTRY",
+              "actionName": "send_request",
+              "input": {
+                "method": "GET",
+                "url": "http://localhost:4010/api/cw1/json",
+                "headers": {},
+                "queryParams": {
+                  "origin": "{{trigger.origin}}",
+                  "destination": "{{trigger.destination}}",
+                  "mode": "{{trigger.mode}}",
+                  "equipmentType": "{{trigger.equipmentType}}",
+                  "serviceLevel": "{{trigger.serviceLevel}}"
+                },
+                "authType": "NONE",
+                "authFields": {},
+                "body_type": "none",
+                "response_is_binary": false,
+                "use_proxy": false
+              },
+              "inputUiInfo": {}
+            }
+          },
+          {
+            "name": "cw1_sqlite_fetch",
+            "displayName": "Fetch CW1 Rates (SQLite)",
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "pieceName": "@docxster/piece-http",
+              "pieceVersion": "0.8.5",
+              "pieceType": "OFFICIAL",
+              "packageType": "REGISTRY",
+              "actionName": "send_request",
+              "input": {
+                "method": "GET",
+                "url": "http://localhost:4010/api/cw1/sqlite",
+                "headers": {},
+                "queryParams": {
+                  "origin": "{{trigger.origin}}",
+                  "destination": "{{trigger.destination}}",
+                  "mode": "{{trigger.mode}}",
+                  "equipmentType": "{{trigger.equipmentType}}",
+                  "serviceLevel": "{{trigger.serviceLevel}}"
+                },
+                "authType": "NONE",
+                "authFields": {},
+                "body_type": "none",
+                "response_is_binary": false,
+                "use_proxy": false
+              },
+              "inputUiInfo": {}
+            }
+          },
+          null
+        ],
+        "nextAction": {
+          "name": "cw1_select_rate",
+          "displayName": "Select CW1 Rate",
+          "type": "CODE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "cw1Source": "{{trigger.cw1Source}}",
+              "tablesRates": "{{steps.cw1_tables_filter.rates}}",
+              "jsonRates": "{{steps.cw1_json_fetch.body.rates}}",
+              "sqliteRates": "{{steps.cw1_sqlite_fetch.body.rates}}"
+            },
+            "sourceCode": {
+              "packageJson": "{\"name\":\"code-cw1_select_rate\",\"version\":\"1.0.0\",\"dependencies\":{}}",
+              "code": "export const code = async (inputs) => {\n  const source = String(inputs.cw1Source || '').toLowerCase();\n  const ensureArray = (value) => Array.isArray(value) ? value : [];\n\n  let rates = [];\n  if (source === 'tables') {\n    rates = ensureArray(inputs.tablesRates);\n  } else if (source === 'sqlite') {\n    rates = ensureArray(inputs.sqliteRates);\n  } else if (source === 'json') {\n    rates = ensureArray(inputs.jsonRates);\n  } else {\n    rates = ensureArray(inputs.jsonRates || inputs.sqliteRates || inputs.tablesRates);\n  }\n\n  return {\n    source,\n    rates,\n    selectedRate: rates[0] || null,\n  };\n};"
+            }
+          },
+          "nextAction": {
+            "name": "cw1_decision_router",
+            "displayName": "CW1 Approved & Available?",
+            "type": "ROUTER",
+            "valid": true,
+            "settings": {
+              "branches": [
+                {
+                  "branchType": "CONDITION",
+                  "branchName": "CW1 Approved",
+                  "conditions": [
+                    [
+                      {
+                        "firstValue": "{{steps.cw1_select_rate.rates}}",
+                        "operator": "LIST_IS_NOT_EMPTY"
+                      },
+                      {
+                        "firstValue": "{{trigger.reviewDecision}}",
+                        "secondValue": "approve",
+                        "operator": "TEXT_EXACTLY_MATCHES",
+                        "caseSensitive": false
+                      }
+                    ]
+                  ]
+                },
+                {
+                  "branchType": "FALLBACK",
+                  "branchName": "Use Spot Rates"
+                }
+              ],
+              "executionType": "EXECUTE_FIRST_MATCH",
+              "inputUiInfo": {}
+            },
+            "children": [
+              {
+                "name": "cw1_markup_percent",
+                "displayName": "Markup Percent (CW1)",
+                "type": "PIECE",
+                "valid": true,
+                "settings": {
+                  "pieceName": "@docxster/piece-math-helper",
+                  "pieceVersion": "0.0.15",
+                  "pieceType": "OFFICIAL",
+                  "packageType": "REGISTRY",
+                  "actionName": "division_math",
+                  "input": {
+                    "first_number": "{{trigger.markupPercent}}",
+                    "second_number": 100
+                  },
+                  "inputUiInfo": {}
+                },
+                "nextAction": {
+                  "name": "cw1_markup_factor",
+                  "displayName": "Markup Factor (CW1)",
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "pieceName": "@docxster/piece-math-helper",
+                    "pieceVersion": "0.0.15",
+                    "pieceType": "OFFICIAL",
+                    "packageType": "REGISTRY",
+                    "actionName": "addition_math",
+                    "input": {
+                      "first_number": 1,
+                      "second_number": "{{steps.cw1_markup_percent}}"
+                    },
+                    "inputUiInfo": {}
+                  },
+                  "nextAction": {
+                    "name": "cw1_markup_total",
+                    "displayName": "Apply Markup (CW1)",
+                    "type": "PIECE",
+                    "valid": true,
+                    "settings": {
+                      "pieceName": "@docxster/piece-math-helper",
+                      "pieceVersion": "0.0.15",
+                      "pieceType": "OFFICIAL",
+                      "packageType": "REGISTRY",
+                      "actionName": "multiplication_math",
+                      "input": {
+                        "first_number": "{{steps.cw1_select_rate.selectedRate.totalRate}}",
+                        "second_number": "{{steps.cw1_markup_factor}}"
+                      },
+                      "inputUiInfo": {}
+                    },
+                    "nextAction": {
+                      "name": "cw1_response",
+                      "displayName": "Share CW1 Quote",
+                      "type": "PIECE",
+                      "valid": true,
+                      "settings": {
+                        "pieceName": "@docxster/piece-forms",
+                        "pieceVersion": "0.4.8",
+                        "pieceType": "OFFICIAL",
+                        "packageType": "REGISTRY",
+                        "actionName": "return_response",
+                        "input": {
+                          "markdown": "## CW1 Quote\n\n- Path: CW1\n- Source: {{steps.cw1_select_rate.source}}\n- Lane: {{trigger.origin}} -> {{trigger.destination}}\n- CW1 Rate (USD): {{steps.cw1_select_rate.selectedRate.totalRate}}\n- Markup %: {{trigger.markupPercent}}\n- Final Total (USD): {{steps.cw1_markup_total}}"
+                        },
+                        "inputUiInfo": {}
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "name": "spot_source_router",
+                "displayName": "Spot Source",
+                "type": "ROUTER",
+                "valid": true,
+                "settings": {
+                  "branches": [
+                    {
+                      "branchType": "CONDITION",
+                      "branchName": "Browser Bot",
+                      "conditions": [
+                        [
+                          {
+                            "firstValue": "{{trigger.spotSource}}",
+                            "secondValue": "browser",
+                            "operator": "TEXT_EXACTLY_MATCHES",
+                            "caseSensitive": false
+                          }
+                        ]
+                      ]
+                    },
+                    {
+                      "branchType": "CONDITION",
+                      "branchName": "HTTP",
+                      "conditions": [
+                        [
+                          {
+                            "firstValue": "{{trigger.spotSource}}",
+                            "secondValue": "http",
+                            "operator": "TEXT_EXACTLY_MATCHES",
+                            "caseSensitive": false
+                          }
+                        ]
+                      ]
+                    },
+                    {
+                      "branchType": "FALLBACK",
+                      "branchName": "Spot Default"
+                    }
+                  ],
+                  "executionType": "EXECUTE_FIRST_MATCH",
+                  "inputUiInfo": {}
+                },
+                "children": [
+                  {
+                    "name": "spot_browser_sequence",
+                    "displayName": "Fetch Spot Rates (Browser)",
+                    "type": "PIECE",
+                    "valid": true,
+                    "settings": {
+                      "pieceName": "@docxster/piece-browser-bot",
+                      "pieceVersion": "0.1.0",
+                      "pieceType": "OFFICIAL",
+                      "packageType": "REGISTRY",
+                      "actionName": "execute_action_sequence",
+                      "input": {
+                        "actions": [
+                          {
+                            "actionType": "navigate",
+                            "value": "http://localhost:4010/carrier/login"
+                          },
+                          {
+                            "actionType": "type",
+                            "selector": "input[name=\"username\"]",
+                            "value": "demo"
+                          },
+                          {
+                            "actionType": "type",
+                            "selector": "input[name=\"password\"]",
+                            "value": "demo123"
+                          },
+                          {
+                            "actionType": "click",
+                            "selector": "button[type=\"submit\"]"
+                          },
+                          {
+                            "actionType": "wait",
+                            "selector": "input[name=\"origin\"]",
+                            "waitCondition": "visible"
+                          },
+                          {
+                            "actionType": "type",
+                            "selector": "input[name=\"origin\"]",
+                            "value": "{{trigger.origin}}"
+                          },
+                          {
+                            "actionType": "type",
+                            "selector": "input[name=\"destination\"]",
+                            "value": "{{trigger.destination}}"
+                          },
+                          {
+                            "actionType": "select",
+                            "selector": "select[name=\"mode\"]",
+                            "value": "{{trigger.mode}}"
+                          },
+                          {
+                            "actionType": "type",
+                            "selector": "input[name=\"equipmentType\"]",
+                            "value": "{{trigger.equipmentType}}"
+                          },
+                          {
+                            "actionType": "click",
+                            "selector": "button[type=\"submit\"]"
+                          },
+                          {
+                            "actionType": "wait",
+                            "selector": "#rate-table",
+                            "waitCondition": "visible"
+                          },
+                          {
+                            "actionType": "extract",
+                            "selector": "#rate-table tbody tr:first-child td:nth-child(5)",
+                            "extractType": "text"
+                          }
+                        ],
+                        "stopOnError": false,
+                        "delayBetweenActions": 500,
+                        "timeout": 30,
+                        "keepSession": false
+                      },
+                      "inputUiInfo": {}
+                    }
+                  },
+                  {
+                    "name": "spot_http_fetch",
+                    "displayName": "Fetch Spot Rates (HTTP)",
+                    "type": "PIECE",
+                    "valid": true,
+                    "settings": {
+                      "pieceName": "@docxster/piece-http",
+                      "pieceVersion": "0.8.5",
+                      "pieceType": "OFFICIAL",
+                      "packageType": "REGISTRY",
+                      "actionName": "send_request",
+                      "input": {
+                        "method": "GET",
+                        "url": "http://localhost:4010/api/spot",
+                        "headers": {},
+                        "queryParams": {
+                          "origin": "{{trigger.origin}}",
+                          "destination": "{{trigger.destination}}",
+                          "mode": "{{trigger.mode}}",
+                          "equipmentType": "{{trigger.equipmentType}}"
+                        },
+                        "authType": "NONE",
+                        "authFields": {},
+                        "body_type": "none",
+                        "response_is_binary": false,
+                        "use_proxy": false
+                      },
+                      "inputUiInfo": {}
+                    }
+                  },
+                  null
+                ],
+                "nextAction": {
+                  "name": "spot_select_rate",
+                  "displayName": "Select Spot Rate",
+                  "type": "CODE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "spotSource": "{{trigger.spotSource}}",
+                      "browserResults": "{{steps.spot_browser_sequence.results}}",
+                      "httpRates": "{{steps.spot_http_fetch.body.rates}}"
+                    },
+                    "sourceCode": {
+                      "packageJson": "{\"name\":\"code-spot_select_rate\",\"version\":\"1.0.0\",\"dependencies\":{}}",
+                      "code": "export const code = async (inputs) => {\n  const source = String(inputs.spotSource || '').toLowerCase();\n  const httpRates = Array.isArray(inputs.httpRates) ? inputs.httpRates : [];\n\n  if (source === 'http') {\n    return { source, rates: httpRates, selectedRate: httpRates[0] || null };\n  }\n\n  if (source === 'browser') {\n    const results = Array.isArray(inputs.browserResults) ? inputs.browserResults : [];\n    const extract = [...results].reverse().find((item) => item && item.actionType === 'extract' && item.success);\n    const raw = extract && extract.data ? extract.data.data : undefined;\n    const text = Array.isArray(raw) ? raw[0] : raw;\n    const parsed = text ? Number(String(text).replace(/[^0-9.]/g, '')) : NaN;\n\n    if (!Number.isFinite(parsed)) {\n      return { source, rates: [], selectedRate: null };\n    }\n\n    const rate = {\n      totalRate: parsed,\n      currency: 'USD',\n      carrier: 'CarrierSiteA',\n    };\n\n    return { source, rates: [rate], selectedRate: rate };\n  }\n\n  return { source, rates: httpRates, selectedRate: httpRates[0] || null };\n};"
+                    }
+                  },
+                  "nextAction": {
+                    "name": "spot_decision_router",
+                    "displayName": "Spot Rates Available?",
+                    "type": "ROUTER",
+                    "valid": true,
+                    "settings": {
+                      "branches": [
+                        {
+                          "branchType": "CONDITION",
+                          "branchName": "Spot Found",
+                          "conditions": [
+                            [
+                              {
+                                "firstValue": "{{steps.spot_select_rate.rates}}",
+                                "operator": "LIST_IS_NOT_EMPTY"
+                              }
+                            ]
+                          ]
+                        },
+                        {
+                          "branchType": "FALLBACK",
+                          "branchName": "No Spot Rates"
+                        }
+                      ],
+                      "executionType": "EXECUTE_FIRST_MATCH",
+                      "inputUiInfo": {}
+                    },
+                    "children": [
+                      {
+                        "name": "spot_markup_percent",
+                        "displayName": "Markup Percent (Spot)",
+                        "type": "PIECE",
+                        "valid": true,
+                        "settings": {
+                          "pieceName": "@docxster/piece-math-helper",
+                          "pieceVersion": "0.0.15",
+                          "pieceType": "OFFICIAL",
+                          "packageType": "REGISTRY",
+                          "actionName": "division_math",
+                          "input": {
+                            "first_number": "{{trigger.markupPercent}}",
+                            "second_number": 100
+                          },
+                          "inputUiInfo": {}
+                        },
+                        "nextAction": {
+                          "name": "spot_markup_factor",
+                          "displayName": "Markup Factor (Spot)",
+                          "type": "PIECE",
+                          "valid": true,
+                          "settings": {
+                            "pieceName": "@docxster/piece-math-helper",
+                            "pieceVersion": "0.0.15",
+                            "pieceType": "OFFICIAL",
+                            "packageType": "REGISTRY",
+                            "actionName": "addition_math",
+                            "input": {
+                              "first_number": 1,
+                              "second_number": "{{steps.spot_markup_percent}}"
+                            },
+                            "inputUiInfo": {}
+                          },
+                          "nextAction": {
+                            "name": "spot_markup_total",
+                            "displayName": "Apply Markup (Spot)",
+                            "type": "PIECE",
+                            "valid": true,
+                            "settings": {
+                              "pieceName": "@docxster/piece-math-helper",
+                              "pieceVersion": "0.0.15",
+                              "pieceType": "OFFICIAL",
+                              "packageType": "REGISTRY",
+                              "actionName": "multiplication_math",
+                              "input": {
+                                "first_number": "{{steps.spot_select_rate.selectedRate.totalRate}}",
+                                "second_number": "{{steps.spot_markup_factor}}"
+                              },
+                              "inputUiInfo": {}
+                            },
+                            "nextAction": {
+                              "name": "spot_response",
+                              "displayName": "Share Spot Quote",
+                              "type": "PIECE",
+                              "valid": true,
+                              "settings": {
+                                "pieceName": "@docxster/piece-forms",
+                                "pieceVersion": "0.4.8",
+                                "pieceType": "OFFICIAL",
+                                "packageType": "REGISTRY",
+                                "actionName": "return_response",
+                                "input": {
+                                  "markdown": "## Spot Quote\n\n- Path: Spot\n- Lane: {{trigger.origin}} -> {{trigger.destination}}\n- Spot Rate (USD): {{steps.spot_select_rate.selectedRate.totalRate}}\n- Markup %: {{trigger.markupPercent}}\n- Final Total (USD): {{steps.spot_markup_total}}"
+                                },
+                                "inputUiInfo": {}
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "team_rates_http",
+                        "displayName": "Fetch Team Rates",
+                        "type": "PIECE",
+                        "valid": true,
+                        "settings": {
+                          "pieceName": "@docxster/piece-http",
+                          "pieceVersion": "0.8.5",
+                          "pieceType": "OFFICIAL",
+                          "packageType": "REGISTRY",
+                          "actionName": "send_request",
+                          "input": {
+                            "method": "GET",
+                            "url": "http://localhost:4010/api/team-rates",
+                            "headers": {},
+                            "queryParams": {
+                              "requestId": "{{trigger.requestId}}"
+                            },
+                            "authType": "NONE",
+                            "authFields": {},
+                            "body_type": "none",
+                            "response_is_binary": false,
+                            "use_proxy": false
+                          },
+                          "inputUiInfo": {}
+                        },
+                        "nextAction": {
+                          "name": "current_date",
+                          "displayName": "Get Current Date",
+                          "type": "PIECE",
+                          "valid": true,
+                          "settings": {
+                            "pieceName": "@docxster/piece-date-helper",
+                            "pieceVersion": "0.1.14",
+                            "pieceType": "OFFICIAL",
+                            "packageType": "REGISTRY",
+                            "actionName": "get_current_date",
+                            "input": {
+                              "timeFormat": "YYYY-MM-DDTHH:mm:ss",
+                              "timeZone": "UTC"
+                            },
+                            "inputUiInfo": {}
+                          },
+                          "nextAction": {
+                            "name": "tat_difference",
+                            "displayName": "TAT Difference (Hours)",
+                            "type": "PIECE",
+                            "valid": true,
+                            "settings": {
+                              "pieceName": "@docxster/piece-date-helper",
+                              "pieceVersion": "0.1.14",
+                              "pieceType": "OFFICIAL",
+                              "packageType": "REGISTRY",
+                              "actionName": "date_difference",
+                              "input": {
+                                "startDate": "{{trigger.requestedAt}}",
+                                "startDateFormat": "YYYY-MM-DDTHH:mm:ss",
+                                "endDate": "{{steps.current_date.result}}",
+                                "endDateFormat": "YYYY-MM-DDTHH:mm:ss",
+                                "unitDifference": [
+                                  "hour"
+                                ]
+                              },
+                              "inputUiInfo": {}
+                            },
+                            "nextAction": {
+                              "name": "tat_router",
+                              "displayName": "Rates Within TAT?",
+                              "type": "ROUTER",
+                              "valid": true,
+                              "settings": {
+                                "branches": [
+                                  {
+                                    "branchType": "CONDITION",
+                                    "branchName": "Within TAT",
+                                    "conditions": [
+                                      [
+                                        {
+                                          "firstValue": "{{steps.tat_difference.hour}}",
+                                          "secondValue": "{{trigger.tatHours}}",
+                                          "operator": "NUMBER_IS_LESS_THAN"
+                                        }
+                                      ],
+                                      [
+                                        {
+                                          "firstValue": "{{steps.tat_difference.hour}}",
+                                          "secondValue": "{{trigger.tatHours}}",
+                                          "operator": "NUMBER_IS_EQUAL_TO"
+                                        }
+                                      ]
+                                    ]
+                                  },
+                                  {
+                                    "branchType": "FALLBACK",
+                                    "branchName": "Escalation"
+                                  }
+                                ],
+                                "executionType": "EXECUTE_FIRST_MATCH",
+                                "inputUiInfo": {}
+                              },
+                              "children": [
+                                {
+                                  "name": "team_markup_percent",
+                                  "displayName": "Markup Percent (Team)",
+                                  "type": "PIECE",
+                                  "valid": true,
+                                  "settings": {
+                                    "pieceName": "@docxster/piece-math-helper",
+                                    "pieceVersion": "0.0.15",
+                                    "pieceType": "OFFICIAL",
+                                    "packageType": "REGISTRY",
+                                    "actionName": "division_math",
+                                    "input": {
+                                      "first_number": "{{trigger.markupPercent}}",
+                                      "second_number": 100
+                                    },
+                                    "inputUiInfo": {}
+                                  },
+                                  "nextAction": {
+                                    "name": "team_markup_factor",
+                                    "displayName": "Markup Factor (Team)",
+                                    "type": "PIECE",
+                                    "valid": true,
+                                    "settings": {
+                                      "pieceName": "@docxster/piece-math-helper",
+                                      "pieceVersion": "0.0.15",
+                                      "pieceType": "OFFICIAL",
+                                      "packageType": "REGISTRY",
+                                      "actionName": "addition_math",
+                                      "input": {
+                                        "first_number": 1,
+                                        "second_number": "{{steps.team_markup_percent}}"
+                                      },
+                                      "inputUiInfo": {}
+                                    },
+                                    "nextAction": {
+                                      "name": "team_markup_total",
+                                      "displayName": "Apply Markup (Team)",
+                                      "type": "PIECE",
+                                      "valid": true,
+                                      "settings": {
+                                        "pieceName": "@docxster/piece-math-helper",
+                                        "pieceVersion": "0.0.15",
+                                        "pieceType": "OFFICIAL",
+                                        "packageType": "REGISTRY",
+                                        "actionName": "multiplication_math",
+                                        "input": {
+                                          "first_number": "{{steps.team_rates_http.body.requests[0].options[0].totalRate}}",
+                                          "second_number": "{{steps.team_markup_factor}}"
+                                        },
+                                        "inputUiInfo": {}
+                                      },
+                                      "nextAction": {
+                                        "name": "team_response",
+                                        "displayName": "Share Team Comparison Quote",
+                                        "type": "PIECE",
+                                        "valid": true,
+                                        "settings": {
+                                          "pieceName": "@docxster/piece-forms",
+                                          "pieceVersion": "0.4.8",
+                                          "pieceType": "OFFICIAL",
+                                          "packageType": "REGISTRY",
+                                          "actionName": "return_response",
+                                          "input": {
+                                            "markdown": "## Team Rates Comparison\n\n- Path: Comparison\n- Lane: {{trigger.origin}} -> {{trigger.destination}}\n- Team Rate (USD): {{steps.team_rates_http.body.requests[0].options[0].totalRate}}\n- Markup %: {{trigger.markupPercent}}\n- Final Total (USD): {{steps.team_markup_total}}"
+                                          },
+                                          "inputUiInfo": {}
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "escalation_rates_http",
+                                  "displayName": "Fetch Escalation Rates",
+                                  "type": "PIECE",
+                                  "valid": true,
+                                  "settings": {
+                                    "pieceName": "@docxster/piece-http",
+                                    "pieceVersion": "0.8.5",
+                                    "pieceType": "OFFICIAL",
+                                    "packageType": "REGISTRY",
+                                    "actionName": "send_request",
+                                    "input": {
+                                      "method": "GET",
+                                      "url": "http://localhost:4010/api/escalation-rates",
+                                      "headers": {},
+                                      "queryParams": {
+                                        "requestId": "{{trigger.requestId}}"
+                                      },
+                                      "authType": "NONE",
+                                      "authFields": {},
+                                      "body_type": "none",
+                                      "response_is_binary": false,
+                                      "use_proxy": false
+                                    },
+                                    "inputUiInfo": {}
+                                  },
+                                  "nextAction": {
+                                    "name": "escalation_markup_percent",
+                                    "displayName": "Markup Percent (Escalation)",
+                                    "type": "PIECE",
+                                    "valid": true,
+                                    "settings": {
+                                      "pieceName": "@docxster/piece-math-helper",
+                                      "pieceVersion": "0.0.15",
+                                      "pieceType": "OFFICIAL",
+                                      "packageType": "REGISTRY",
+                                      "actionName": "division_math",
+                                      "input": {
+                                        "first_number": "{{trigger.markupPercent}}",
+                                        "second_number": 100
+                                      },
+                                      "inputUiInfo": {}
+                                    },
+                                    "nextAction": {
+                                      "name": "escalation_markup_factor",
+                                      "displayName": "Markup Factor (Escalation)",
+                                      "type": "PIECE",
+                                      "valid": true,
+                                      "settings": {
+                                        "pieceName": "@docxster/piece-math-helper",
+                                        "pieceVersion": "0.0.15",
+                                        "pieceType": "OFFICIAL",
+                                        "packageType": "REGISTRY",
+                                        "actionName": "addition_math",
+                                        "input": {
+                                          "first_number": 1,
+                                          "second_number": "{{steps.escalation_markup_percent}}"
+                                        },
+                                        "inputUiInfo": {}
+                                      },
+                                      "nextAction": {
+                                        "name": "escalation_markup_total",
+                                        "displayName": "Apply Markup (Escalation)",
+                                        "type": "PIECE",
+                                        "valid": true,
+                                        "settings": {
+                                          "pieceName": "@docxster/piece-math-helper",
+                                          "pieceVersion": "0.0.15",
+                                          "pieceType": "OFFICIAL",
+                                          "packageType": "REGISTRY",
+                                          "actionName": "multiplication_math",
+                                          "input": {
+                                            "first_number": "{{steps.escalation_rates_http.body.requests[0].options[0].totalRate}}",
+                                            "second_number": "{{steps.escalation_markup_factor}}"
+                                          },
+                                          "inputUiInfo": {}
+                                        },
+                                        "nextAction": {
+                                          "name": "escalation_response",
+                                          "displayName": "Share Escalation Quote",
+                                          "type": "PIECE",
+                                          "valid": true,
+                                          "settings": {
+                                            "pieceName": "@docxster/piece-forms",
+                                            "pieceVersion": "0.4.8",
+                                            "pieceType": "OFFICIAL",
+                                            "packageType": "REGISTRY",
+                                            "actionName": "return_response",
+                                            "input": {
+                                              "markdown": "## Escalation Quote\n\n- Path: Escalation\n- Lane: {{trigger.origin}} -> {{trigger.destination}}\n- Escalation Rate (USD): {{steps.escalation_rates_http.body.requests[0].options[0].totalRate}}\n- Markup %: {{trigger.markupPercent}}\n- Final Total (USD): {{steps.escalation_markup_total}}"
+                                            },
+                                            "inputUiInfo": {}
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "valid": true,
+    "schemaVersion": "6",
+    "connectionIds": [],
+    "agentIds": []
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "rates": [
+    {
+      "id": "SPOT-001",
+      "origin": "DFW",
+      "destination": "BOM",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "SPOT",
+      "currency": "USD",
+      "baseRate": 4700,
+      "fuelSurcharge": 450,
+      "totalRate": 5150,
+      "transitDays": 24,
+      "carrier": "CarrierSiteA",
+      "source": "carrier-site"
+    },
+    {
+      "id": "SPOT-002",
+      "origin": "LAX",
+      "destination": "SHA",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "SPOT",
+      "currency": "USD",
+      "baseRate": 4100,
+      "fuelSurcharge": 420,
+      "totalRate": 4520,
+      "transitDays": 20,
+      "carrier": "CarrierSiteA",
+      "source": "carrier-site"
+    },
+    {
+      "id": "SPOT-003",
+      "origin": "SEA",
+      "destination": "HKG",
+      "mode": "OCEAN",
+      "equipmentType": "40HC",
+      "serviceLevel": "SPOT",
+      "currency": "USD",
+      "baseRate": 3900,
+      "fuelSurcharge": 380,
+      "totalRate": 4280,
+      "transitDays": 19,
+      "carrier": "CarrierSiteA",
+      "source": "carrier-site"
+    },
+    {
+      "id": "SPOT-004",
+      "origin": "SFO",
+      "destination": "SYD",
+      "mode": "AIR",
+      "equipmentType": "AIR",
+      "serviceLevel": "SPOT",
+      "currency": "USD",
+      "baseRate": 7800,
+      "fuelSurcharge": 700,
+      "totalRate": 8500,
+      "transitDays": 4,
+      "carrier": "CarrierSiteB",
+      "source": "carrier-site"
+    }
+  ]
+}
